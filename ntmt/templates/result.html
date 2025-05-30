@@ -1,0 +1,139 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Network Monitor</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        body { font-family: Arial; padding: 20px; }
+        footer { 
+            background-color: rgb(95, 105, 105);
+            color: bisque;
+            padding: 20px;
+            bottom: 0%;
+            width: 100%;
+            position: relative;
+            font-family: Arial, sans-serif;
+        }
+        header {
+            background-color: rgb(95, 105, 105);
+            color: bisque;
+            padding: 40px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            width: 100%;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 36px;
+        }
+        header p {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+        .foot {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            padding: 10px;
+        }
+        #alerts { margin-bottom: 20px; }
+        .alert { padding: 10px; margin: 5px 0; border-radius: 5px; color: white; }
+        .malicious { background: #dc3545; }
+        .bandwidth { background: #ffc107; color: black; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>NETWORK TRAFFIC MONITORING TOOL</h1>
+        <p>Undergraduate Project at Nnamdi Azikiwe University, Awka<br>
+        Electronic and Computer Engineering Department</p>
+    </header>
+    <h1>Traffic Analysis Result</h1>
+    <h2>Protocol Distribution</h2>
+    <img src="data:image/png;base64,{{ img_data }}" alt="Traffic Pie Chart">
+    <h2>Protocol Counts</h2>
+    <ul>
+        {% for protocol, count in protocol_counts.items() %}
+            <li>{{ protocol }}: {{ count }}</li>
+        {% endfor %}
+    </ul>
+    <br><a href="{{ url_for('index') }}">Back to Interface Selection</a>
+
+    <br><h2>Bandwidth Usage per IP (KB)</h2>
+    <ul id="bandwidthList"></ul>
+    
+    <div id="alerts"></div>
+    
+    <script>
+    function fetchTrafficStats() {
+        fetch('/traffic_stats')
+            .then(res => res.json())
+            .then(data => {
+                // Update protocol counts list
+                let protocolCounts = document.querySelector('ul');
+                protocolCounts.innerHTML = '';
+                for (const [proto, count] of Object.entries(data.protocol_counts)) {
+                    let li = document.createElement('li');
+                    li.textContent = `${proto}: ${count}`;
+                    protocolCounts.appendChild(li);
+                }
+    
+                // Update bandwidth per IP
+                const bandwidthList = document.getElementById('bandwidthList');
+                bandwidthList.innerHTML = '';
+                for (const [ip, bw] of Object.entries(data.bandwidth_per_ip_kb)) {
+                    let li = document.createElement('li');
+                    li.textContent = `${ip}: ${bw} KB`;
+                    bandwidthList.appendChild(li);
+    
+                    // Alert if bandwidth > 1000 KB
+                    if (bw > 1000) {
+                        showAlert(`High bandwidth usage detected on IP ${ip}: ${bw} KB`, 'bandwidth');
+                    }
+                }
+            });
+    }
+    
+    function showAlert(message, type) {
+        const alertsDiv = document.getElementById('alerts');
+        const alertElem = document.createElement('div');
+        alertElem.className = 'alert ' + type;
+        alertElem.textContent = message;
+        alertsDiv.appendChild(alertElem);
+    
+        setTimeout(() => alertElem.remove(), 10000);
+    }
+    
+    // Poll every 5 seconds
+    setInterval(fetchTrafficStats, 5000);
+    fetchTrafficStats();
+    </script>
+    <br>
+    <footer>
+        <div class="foot">
+        <div>
+            <h1>Created by</h1>
+            <p>BELLO YUSUF ALANI<br>
+                EDEH JOHNPAUL CHUKWUEMKA<br>
+                UDEMGBA FERDINAND CHIDERA<br>
+                NWANKWO BLESSING PETER<br>
+                NNADI MITCHELL CHUKWUEBUKA<br>
+                IGUH CHIMEZIE ANTHONY
+            </p>
+        </div>
+        <div style="text-align: right;">
+            <h1>
+                Under the supervision of
+            </h1>
+            <p><b>Prof. K. A. Akpado</b><br>
+                Engr. Chikwado Eze<br>
+                odo Uchenna Hilary<br>
+                Ozumba Emeka Cyril
+            </p>
+        </div>
+        </div>
+    </footer>
+</body>
+</html>
